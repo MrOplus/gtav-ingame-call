@@ -77,6 +77,7 @@ add_library(PhoneLink SHARED
     src/Log.cpp
     src/Base64.cpp
     src/Watchdog.cpp
+    src/NativePhone.cpp
     ${GEN_DIR}/natives.h
 )
 add_dependencies(PhoneLink phonelink_generated)

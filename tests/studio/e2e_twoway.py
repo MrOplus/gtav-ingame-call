@@ -219,6 +219,38 @@ async def main(h: Harness):
     await recv_type(ws, "ended")
     await pc.close()
 
+    print("game phone: friend in Contacts app, call from the phone's own UI")
+    await asyncio.sleep(1)
+    h.drain()
+    h.send("phone contacts")  # phone up with the Contacts app open
+    check(await h.expect("[scaleform] SET_DATA_SLOT 2 50 0 'Ali' CELL_999 'CHAR_DEFAULT'") is not None,
+          "friend injected into the phone's Contacts list (slot 50)")
+    h.send("phone select 3")  # one of the game's own contacts
+    await asyncio.sleep(0.6)
+    check(not any("TERMINATE appcontacts" in l for l in h.drain()), "selecting a game contact is left to the game")
+    h.send("phone select 50")
+    inc = await recv_type(ws, "incoming")
+    check(inc is not None, "selecting the friend in the phone rings their page")
+    lines = h.drain() + [await h.expect("Dial_and_Remote_Ring") or ""]
+    check(any("TERMINATE appcontacts" in l for l in lines), "game's contacts app is stopped for our call")
+    check(any("SET_DATA_SLOT 4 0 3 'Ali' 'CHAR_DEFAULT' CELL_211" in l for l in lines), "phone shows its call screen: DIALING")
+    check(any("Dial_and_Remote_Ring" in l for l in lines), "phone ringback sound plays")
+    pc, got = await make_offer()
+    await ws.send(json.dumps({"type": "accept", "sdp": pc.localDescription.sdp, "name": "Ali"}))
+    ans = await recv_type(ws, "answer")
+    await pc.setRemoteDescription(RTCSessionDescription(sdp=ans["sdp"], type="answer"))
+    await recv_type(ws, "connected")
+    check(await h.expect("SET_DATA_SLOT 4 0 3 'Ali' 'CHAR_DEFAULT' CELL_219") is not None, "phone call screen switches to CONNECTED")
+    await asyncio.sleep(1)
+    h.send("phone cancel")  # the phone's own back/hang-up button
+    e = await recv_type(ws, "ended")
+    check(e["reason"] == "host_hung_up", f"hanging up on the phone ends the call ({e['reason']})")
+    check(await h.expect("SHUTDOWN_MOVIE") is not None and await h.expect("START_NEW_SCRIPT cellphone_controller") is not None,
+          "phone is put away and its scripts restarted")
+    await pc.close()
+    h.send("phone down")
+    await asyncio.sleep(1)
+
     print("friend leaves -> no longer callable")
     await ws.close()
     await asyncio.sleep(1)

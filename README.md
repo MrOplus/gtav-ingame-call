@@ -17,7 +17,7 @@ friend's browser  ──WebRTC voice (direct)──►  PhoneLink Studio (your P
 ## Features
 
 - **Friends call you.** Your phone rings in-game with their name. **Y** answers, **N** declines or hangs up.
-- **You call friends.** **F7** opens a contacts list of friends who have your page open. **Enter** calls the selected friend, and their browser rings.
+- **You call friends from the real in-game phone.** Online friends appear in the phone's **Contacts** app (Up arrow). Selecting one uses the phone's own call screen, and their browser rings. **F7** opens a fallback contacts menu.
 - **Texts.** Friends' messages arrive as in-game phone notifications.
 - **Busy and offline.** While you're on a call, friends see *Busy*. With the game closed, they see *Not in game*.
 - **Invite link.** Only people with your code can call. Repeated wrong codes are rate-limited.

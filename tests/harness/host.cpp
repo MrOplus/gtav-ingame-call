@@ -54,7 +54,8 @@ int main(int argc, char** argv)
 	}
 	auto run = reinterpret_cast<void (*)()>(GetProcAddress(shv, "?harnessRunScript@@YAXXZ"));
 	auto key = reinterpret_cast<void (*)(DWORD)>(GetProcAddress(shv, "?harnessKey@@YAXK@Z"));
-	if (!run || !key)
+	auto phone = reinterpret_cast<void (*)(int, int)>(GetProcAddress(shv, "?harnessPhone@@YAXHH@Z"));
+	if (!run || !key || !phone)
 	{
 		printf("stub exports missing\n");
 		return 1;
@@ -72,6 +73,16 @@ int main(int argc, char** argv)
 			key(0x4E);
 		else if (line == "q")
 			break;
+		else if (line == "phone down")
+			phone(0, 0);
+		else if (line == "phone up")
+			phone(1, 0);
+		else if (line == "phone contacts")
+			phone(2, 0);
+		else if (line.rfind("phone select ", 0) == 0)
+			phone(3, atoi(line.c_str() + 13));
+		else if (line == "phone cancel")
+			phone(4, 0);
 		else if (line.rfind("k ", 0) == 0)
 			key(static_cast<DWORD>(strtoul(line.c_str() + 2, nullptr, 16))); // e.g. "k 76" = F7
 		else if (line == "exit")

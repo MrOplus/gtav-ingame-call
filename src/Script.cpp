@@ -17,6 +17,7 @@
 #include "Commands.h"
 #include "Config.h"
 #include "Log.h"
+#include "NativePhone.h"
 #include "Tts.h"
 #include "Watchdog.h"
 
@@ -78,6 +79,7 @@ namespace script
 			uint64_t answeredMs = 0;
 			std::optional<std::future<tts::Result>> tts;
 			bool animStarted = false;
+			bool native = false; // shown on the game phone's call screen
 			std::vector<Subtitle> subtitles;
 			size_t nextSubtitle = 0;
 		};
@@ -87,6 +89,7 @@ namespace script
 
 		std::vector<Contact> g_contacts;
 		int g_menuSel = 0;
+		uint64_t g_nativeDialDeadline = 0; // phone shows DIALING until Studio starts the call
 		constexpr uint64_t kDialTimeoutMs = 45'000; // safety net; Studio normally ends it first
 
 		uint64_t nowMs()
@@ -222,8 +225,11 @@ namespace script
 			LOG("call %s ended: %s", g_call->cmd.id.c_str(), reason);
 			emit("call_ended", g_call->cmd.id, extra);
 
+			bool native = g_call->native;
 			g_call.reset();
 			g_state = State::Idle;
+			if (native)
+				phone::close();
 		}
 
 		bool startMedia(Call& call)
@@ -281,6 +287,11 @@ namespace script
 				return;
 			}
 			g_state = State::Active;
+			if (call.native)
+			{
+				phone::stopRingback();
+				phone::showCallScreen(call.cmd.from, call.cmd.icon, "CELL_219"); // CONNECTED
+			}
 			json extra;
 			if (call.cmd.audio == CallAudio::Stream)
 				extra = {{"sample_rate", call.cmd.sampleRate}, {"channels", call.cmd.channels},
@@ -332,7 +343,15 @@ namespace script
 			if (call.cmd.outgoing)
 			{
 				// The player is calling out: phone to the ear, ringback until they pick up.
-				AUDIO::PLAY_PED_RINGTONE("Dial_and_Remote_Ring", ped, TRUE);
+				g_nativeDialDeadline = 0;
+				call.native = g_config.nativePhone && phone::isUp();
+				if (call.native)
+				{
+					phone::showCallScreen(call.cmd.from, call.cmd.icon, "CELL_211"); // DIALING...
+					phone::startRingback();
+				}
+				else
+					AUDIO::PLAY_PED_RINGTONE("Dial_and_Remote_Ring", ped, TRUE);
 				if (g_config.phoneAnimation)
 				{
 					TASK::TASK_USE_MOBILE_PHONE(ped, TRUE, g_config.phoneAnimMode);
@@ -412,6 +431,8 @@ namespace script
 			Call& call = *g_call;
 			bool answerKey = g_answerPressed.exchange(false);
 			bool hangupKey = g_hangupPressed.exchange(false);
+			if (call.native && phone::cancelPressed())
+				hangupKey = true; // the phone's own back / hang-up button
 			uint64_t now = nowMs();
 
 			switch (g_state)
@@ -456,7 +477,7 @@ namespace script
 					endCall("no_answer");
 					break;
 				}
-				if (now - call.lastRingMs > 1000 && !AUDIO::IS_PED_RINGTONE_PLAYING(PLAYER::PLAYER_PED_ID()))
+				if (!call.native && now - call.lastRingMs > 1000 && !AUDIO::IS_PED_RINGTONE_PLAYING(PLAYER::PLAYER_PED_ID()))
 				{
 					AUDIO::PLAY_PED_RINGTONE("Dial_and_Remote_Ring", PLAYER::PLAYER_PED_ID(), TRUE);
 					call.lastRingMs = now;
@@ -492,8 +513,32 @@ namespace script
 				break;
 			}
 
-			if (g_call)
+			// The game phone shows its own call screen; draw our panel only without it.
+			if (g_call && !(g_call->native && phone::isUp()))
 				drawCallPanel();
+		}
+
+		// ---- game phone: friends in the Contacts app -------------------------------
+		void updateNativePhone(bool playerOk)
+		{
+			if (!g_config.nativePhone || !playerOk)
+				return;
+			bool canDial = g_state == State::Idle && !g_menuOpen && g_nativeDialDeadline == 0;
+			if (auto id = phone::update(g_contacts, canDial, g_config.defaultIcon))
+			{
+				std::string name;
+				for (auto& c : g_contacts)
+					if (c.id == *id)
+						name = c.name;
+				emit("dial", {}, {{"contact", *id}, {"name", name}});
+				g_nativeDialDeadline = nowMs() + 6000;
+			}
+			// Studio didn't start the call (friend left, busy...): put the phone away.
+			if (g_nativeDialDeadline && g_state == State::Idle && nowMs() > g_nativeDialDeadline)
+			{
+				g_nativeDialDeadline = 0;
+				phone::close();
+			}
 		}
 
 		// ---- contacts menu (call a friend) ----------------------------------------
@@ -686,6 +731,8 @@ namespace script
 		// The script fiber restarts when the game reloads scripts; drop any stale call.
 		g_call.reset();
 		g_state = State::Idle;
+		g_nativeDialDeadline = 0;
+		phone::reset();
 
 		bool wasInGame = false;
 		uint64_t frames = 0, lastBeat = nowMs();
@@ -704,6 +751,7 @@ namespace script
 					processCommands(); // otherwise keep them queued until the player is back
 				updateCall(playerOk);
 				updateMenu(playerOk);
+				updateNativePhone(playerOk);
 			}
 			catch (const std::exception& e)
 			{

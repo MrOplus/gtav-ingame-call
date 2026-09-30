@@ -50,7 +50,8 @@ Paste the public address into **Setup → Public address** and save. Your invite
 |---|---|
 | **Y** | Answer an incoming call |
 | **N** | Decline, hang up, or cancel an outgoing call |
-| **F7** | Open/close the contacts menu |
+| **Up arrow** → Contacts | Your online friends are listed with the game's contacts. Select one to call them; the phone shows its own *Dialing…* / *Connected* screen. The phone's back button hangs up. |
+| **F7** | Open/close PhoneLink's own contacts menu (fallback) |
 | **Up/Down**, **Enter** | Pick a friend in the contacts menu and call them |
 | **Backspace** | Close the contacts menu |
 
@@ -74,6 +75,7 @@ You can change these keys in `PhoneLink.ini`, under `[Call]`, using Windows virt
 | Call | `RingTimeoutSec` | 25 | Seconds before an unanswered incoming call counts as missed |
 | Call | `AnswerKey` / `HangupKey` / `ContactsKey` | 0x59 (Y) / 0x4E (N) / 0x76 (F7) | Keys |
 | Call | `PhoneAnimation` | 1 | Put the phone to your character's ear during calls |
+| Call | `NativePhone` | 1 | Show friends in the game phone's Contacts app and use its call screen. Set 0 if it conflicts with a mission or another phone mod. |
 | Audio | `Volume` | 1.0 | Call volume |
 | Log | `Level` | info | `debug` / `info` / `warn` / `error`. The log file is `PhoneLink.log` in the game folder. |
 
@@ -89,6 +91,8 @@ You can change these keys in `PhoneLink.ini`, under `[Call]`, using Windows virt
 | Call connects but there's no audio | The friend's network blocks direct connections. Add a TURN relay under **Setup → Relay server**. |
 | Friend hears echo | Use headphones. |
 | Launcher opens, then nothing happens | An old `GTA5.exe` is still stuck from the last session. End it in Task Manager (Details tab). If it can't be ended and you use **Cloudflare WARP**, restart the *Cloudflare One Client* service or reboot. |
+| Friends missing from the phone's Contacts | They need your call page open *and* a name entered. They're added below the game's own contacts, so scroll down. |
+| Phone behaves oddly during a mission | Set `NativePhone=0` in `PhoneLink.ini` and use **F7** instead. |
 | GTA hangs when quitting | Usually another mod crashing during shutdown. It has been seen with *Enhanced Native Trainer*. Update or remove that mod. |
 
 Logs:

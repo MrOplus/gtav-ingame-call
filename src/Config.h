@@ -19,6 +19,7 @@ struct Config
 	int answerKey = 0x59; // Y
 	int hangupKey = 0x4E; // N
 	int contactsKey = 0x76; // F7: open the contacts menu to call a friend
+	bool nativePhone = true; // friends in the game phone's Contacts app + its call screen
 
 	// [Audio]
 	float volume = 1.0f;

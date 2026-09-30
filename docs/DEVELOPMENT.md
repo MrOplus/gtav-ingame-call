@@ -7,6 +7,7 @@ src/                 PhoneLink.asi (C++20)
   main.cpp             DllMain: register script + keyboard handler, clean shutdown/abandon on exit
   Script.cpp           script fiber: command queue, call state machine, call panel, F7 contacts menu
   ApiServer.cpp        HTTP + WebSocket API (IXWebSocket); sends from a dedicated thread
+  NativePhone.cpp      game phone integration (contacts injection + call screen), after iFruitAddon2
   Audio.cpp            miniaudio: clips, jitter-buffered stream, microphone capture
   Tts.cpp              Windows SAPI text-to-speech (used by /call with text)
   Config.cpp, Log.cpp, Watchdog.cpp, Base64.cpp
@@ -78,6 +79,7 @@ All tests run without GTA. Python needs `websockets`; the Studio test uses Studi
 The harness tests use ports 18765/18766 and the Studio test uses 18770/18771, so they don't interfere with a running game or Studio. Harness commands on stdin:
 - `y` / `n`: answer or hang-up key
 - `k <hex vk>`: any key
+- `phone up` / `phone contacts` / `phone down` / `phone select <slot>` / `phone cancel`: drive the simulated game phone. The stub prints every call made to the phone's UI as `[scaleform] …`.
 - `exit`: a game-like `ExitProcess`
 - `q`: quit
 
@@ -103,6 +105,22 @@ With `HARNESS_TRACE=1`, the harness prints a symbolized stack for any C++ except
 - **Shutdown:** on process exit, the other threads are already dead. `DllMain` then *abandons* its threads and servers (detach or leak) instead of joining them, because joining would crash (`std::terminate`) or hang.
 - **Audio:** call audio uses its own WASAPI stream (miniaudio), not the game's audio engine, which can only play sounds packed into the game files. The live stream has a 100 ms jitter buffer.
 - **WebRTC (Studio):** aiortc only gathers ICE candidates on the adapter that routes to the internet. With every adapter included (VPN, Hyper-V, WSL), STUN timeouts made each call take 5 s to connect.
+
+## Game phone integration
+
+`NativePhone.cpp` follows [iFruitAddon2](https://github.com/Bob74/iFruitAddon2)'s approach, using natives only and no memory offsets:
+
+- **Detecting the phone:**
+  - The phone is up when the `cellphone_flashhand` script runs.
+  - The Contacts app is open when `appcontacts` runs.
+- **Which phone UI:**
+  - `cellphone_badger` for Franklin
+  - `cellphone_facade` for Trevor
+  - `cellphone_ifruit` for everyone else
+- **Adding contacts:** `SET_DATA_SLOT` on view 2, from slot 50 upwards, re-sent every frame while Contacts is open.
+- **Selecting a contact:** `INPUT_CELLPHONE_SELECT` (176), then `GET_CURRENT_SELECTION`. A slot that belongs to us stops `appcontacts` and shows view 4 (the call screen) with `CELL_211` (dialing), then `CELL_219` (connected).
+- **Hanging up:** `INPUT_CELLPHONE_CANCEL` (177). Closing the phone runs `SHUTDOWN_MOVIE`, then `DESTROY_MOBILE_PHONE`, then restarts `cellphone_flashhand` and `cellphone_controller`.
+- **Incoming calls** still use PhoneLink's own ring and panel.
 
 ## Diagnosing a game that hangs on exit
 

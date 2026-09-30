@@ -75,6 +75,7 @@ void loadConfig()
 	c.answerKey = readInt(L"Call", L"AnswerKey", c.answerKey);
 	c.hangupKey = readInt(L"Call", L"HangupKey", c.hangupKey);
 	c.contactsKey = readInt(L"Call", L"ContactsKey", c.contactsKey);
+	c.nativePhone = readInt(L"Call", L"NativePhone", c.nativePhone) != 0;
 
 	c.volume = readFloat(L"Audio", L"Volume", c.volume);
 	c.ttsVoice = readString(L"Audio", L"TtsVoice", c.ttsVoice);
@@ -92,6 +93,7 @@ void logConfig()
 	LOG_INFO("config: ring=%ds ringtone=%s icon=%s anim=%d mode=%d keys answer=0x%02X hangup=0x%02X contacts=0x%02X",
 		c.ringTimeoutSec, c.ringtone.c_str(), c.defaultIcon.c_str(), c.phoneAnimation, c.phoneAnimMode, c.answerKey,
 		c.hangupKey, c.contactsKey);
+	LOG_INFO("config: native phone=%d", c.nativePhone);
 	LOG_INFO("config: volume=%.2f tts voice='%s' rate=%d mic=%dHz log=%s", c.volume, c.ttsVoice.c_str(), c.ttsRate,
 		c.micSampleRate, c.logLevel.c_str());
 }
