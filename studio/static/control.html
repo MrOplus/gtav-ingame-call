@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PhoneLink Studio</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235db6e5' stroke-width='2'%3E%3Crect x='6' y='2' width='12' height='20' rx='2.5'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #0d0f12; --panel: #15181d; --panel2: #1c2027; --line: #2a2f38;
+    --text: #e8eaed; --muted: #8b93a1; --accent: #5db6e5; --accent2: #2f8fc4;
+    --ok: #4cc38a; --warn: #e5b45d; --bad: #e5645d; --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 "Segoe UI", system-ui, sans-serif; }
+  header { display: flex; align-items: center; gap: 16px; padding: 14px 22px; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
+  .brand { font-weight: 700; font-size: 17px; display: flex; align-items: center; gap: 9px; }
+  .brand svg { color: var(--accent); }
+  .chips { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+  .chip { display: flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 99px; background: var(--panel2); border: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+  .dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); }
+  nav { display: flex; gap: 4px; padding: 10px 22px 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  nav button { background: none; border: 0; color: var(--muted); padding: 10px 14px; font: inherit; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+  nav button.active { color: var(--text); border-bottom-color: var(--accent); }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; padding: 20px 22px; max-width: 1200px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  section.tab { display: none; } section.tab.active { display: block; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+  .card h2 { margin: 0 0 4px; font-size: 16px; } .card p.sub { margin: 0 0 14px; color: var(--muted); }
+  label { display: block; font-size: 12.5px; color: var(--muted); margin: 12px 0 5px; }
+  input, select, textarea { width: 100%; background: var(--panel2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 9px 11px; font: inherit; }
+  textarea { min-height: 100px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent2); border-color: transparent; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } @media (max-width: 600px) { .row { grid-template-columns: 1fr; } }
+  .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
+  button.btn { background: var(--accent2); color: #fff; border: 0; border-radius: 8px; padding: 9px 18px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.btn:hover { background: var(--accent); } button.btn:disabled { opacity: .45; cursor: default; }
+  button.ghost { background: var(--panel2); color: var(--text); border: 1px solid var(--line); font-weight: 500; }
+  button.ghost:hover { background: var(--line); } button.danger { background: #8c2f2b; } button.danger:hover { background: var(--bad); }
+  .hint { color: var(--muted); font-size: 12.5px; }
+  .msg { margin-top: 12px; padding: 9px 12px; border-radius: 8px; font-size: 13px; display: none; }
+  .msg.show { display: block; } .msg.ok { background: #16321f; color: #9fe3bd; } .msg.bad { background: #3a1a18; color: #f3b1ad; }
+  .feed { list-style: none; margin: 0; padding: 0; max-height: 70vh; overflow-y: auto; }
+  .feed li { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; display: flex; gap: 10px; }
+  .feed time { color: var(--muted); font-variant-numeric: tabular-nums; flex: none; }
+  .big { display: flex; align-items: center; gap: 14px; }
+  .big .dot { width: 14px; height: 14px; }
+  .big b { font-size: 18px; }
+  .link { display: flex; gap: 8px; } .link input { font-family: Consolas, monospace; font-size: 13px; }
+  .checks { list-style: none; padding: 0; margin: 10px 0; } .checks li { display: flex; gap: 9px; align-items: center; padding: 4px 0; }
+  pre.log, pre.cmd { background: #090a0c; border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow: auto; font: 12px/1.5 Consolas, monospace; white-space: pre-wrap; }
+  pre.log { max-height: 60vh; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; } td, th { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--line); } th { color: var(--muted); font-weight: 500; }
+  .steps { margin: 6px 0 0; padding-left: 20px; color: var(--muted); } .steps li { margin: 6px 0; }
+  code { background: var(--panel2); padding: 1px 5px; border-radius: 4px; }
+  details summary { cursor: pointer; color: var(--accent); margin-top: 10px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>
+    PhoneLink Studio
+  </div>
+  <div class="chips">
+    <div class="chip" title="Connection to the PhoneLink plugin inside GTA V"><span class="dot" id="gameDot"></span><span id="gameText">Game: checking…</span></div>
+    <div class="chip" title="What friends see on your call page"><span class="dot" id="availDot"></span><span id="availText">Friends see: …</span></div>
+  </div>
+</header>
+<nav id="tabs">
+  <button data-tab="calls" class="active">Calls</button>
+  <button data-tab="sms">Message</button>
+  <button data-tab="setup">Setup</button>
+  <button data-tab="log">Log</button>
+</nav>
+<main>
+  <div>
+    <!-- CALLS -->
+    <section class="tab active" id="tab-calls">
+      <div class="card">
+        <div class="big"><span class="dot" id="bigDot"></span><div><b id="bigText">…</b><div class="hint" id="bigSub"></div></div></div>
+        <div class="actions" id="activeActions" hidden><button class="btn danger" id="hangupBtn">Hang up</button></div>
+      </div>
+      <div class="card">
+        <h2>Your invite link</h2>
+        <p class="sub">Send this to friends. They open it in a browser (phone or PC) and press Call — nothing to install.</p>
+        <div class="link"><input id="inviteLink" readonly><button class="btn" id="copyBtn">Copy</button></div>
+        <p class="hint" id="linkHint" hidden style="margin-top:8px">Set your public tunnel address on the Setup tab to complete the link.</p>
+        <div class="row">
+          <div><label for="displayName">Your name (shown on the call page)</label><input id="displayName" maxlength="24"></div>
+          <div><label for="callerIcon">Contact picture for incoming calls</label><select id="callerIcon"></select></div>
+        </div>
+        <div class="actions">
+          <button class="btn ghost" id="saveCalls">Save</button>
+          <button class="btn ghost" id="regenBtn" title="Old links stop working">New invite code</button>
+        </div>
+        <div class="msg" id="callsMsg"></div>
+      </div>
+      <div class="card">
+        <h2>Friends online</h2>
+        <p class="sub">Friends with your call page open. Call them in-game with <b>F7</b> (contacts menu).</p>
+        <ul class="checks" id="friendsList"></ul>
+      </div>
+      <div class="card">
+        <h2>Recent calls</h2>
+        <table><thead><tr><th>Time</th><th></th><th>Who</th><th>Result</th><th>Length</th></tr></thead><tbody id="historyBody"></tbody></table>
+        <p class="hint" id="historyEmpty">No calls yet.</p>
+      </div>
+      <div class="card">
+        <h2>Test the in-game phone</h2>
+        <p class="sub">Rings your phone in-game with a short Windows-voice message — handy to check the plugin works.</p>
+        <div class="actions" style="margin-top:0"><button class="btn ghost" id="testBtn">Ring me</button></div>
+        <div class="msg" id="testMsg"></div>
+      </div>
+    </section>
+
+    <!-- SMS -->
+    <section class="tab" id="tab-sms">
+      <div class="card">
+        <h2>Send yourself a text</h2>
+        <p class="sub">Shows as an in-game phone notification.</p>
+        <div class="row">
+          <div><label for="smsSender">From</label><input id="smsSender" value="Lester"></div>
+          <div><label for="smsIcon">Contact picture</label><select id="smsIcon"></select></div>
+        </div>
+        <label for="smsText">Message</label><textarea id="smsText" placeholder="Meet me at the docks."></textarea>
+        <div class="actions"><button class="btn" id="smsBtn">Send</button></div>
+        <div class="msg" id="smsMsg"></div>
+      </div>
+    </section>
+
+    <!-- SETUP -->
+    <section class="tab" id="tab-setup">
+      <div class="card">
+        <h2>1. Install into GTA V</h2>
+        <p class="sub">Needs <a href="http://www.dev-c.com/gtav/scripthookv/" target="_blank" style="color:var(--accent)">Script Hook V</a> in the game folder. Story mode only.</p>
+        <label for="gtaDir">Game folder</label>
+        <div class="actions" style="margin-top:0">
+          <input id="gtaDir" list="gtaDirs" placeholder="C:\Program Files\Rockstar Games\Grand Theft Auto V" style="flex:1;min-width:240px">
+          <datalist id="gtaDirs"></datalist>
+          <button class="btn ghost" id="gtaCheck">Check</button>
+        </div>
+        <ul class="checks" id="gtaChecks"></ul>
+        <div class="actions"><button class="btn" id="gtaInstall">Install / update plugin</button></div>
+        <div class="msg" id="gtaMsg"></div>
+      </div>
+      <div class="card">
+        <h2>2. Make your call page reachable (Cloudflare Tunnel)</h2>
+        <p class="sub">Only the call page (port <b>8771</b>) goes online. Never tunnel this control panel (8770).</p>
+        <ol class="steps">
+          <li>Install <code>cloudflared</code>: <code>winget install Cloudflare.cloudflared</code></li>
+          <li><b>Quick test</b> (random address, changes every run):<pre class="cmd">cloudflared tunnel --url http://127.0.0.1:8771</pre></li>
+          <li><b>Permanent address</b> on your own domain:<pre class="cmd">cloudflared tunnel login
+cloudflared tunnel create phonelink
+cloudflared tunnel route dns phonelink call.yourdomain.com
+cloudflared tunnel run --url http://127.0.0.1:8771 phonelink</pre></li>
+          <li>Paste the public address below and save.</li>
+        </ol>
+        <label for="publicUrl">Public address</label>
+        <input id="publicUrl" placeholder="https://call.yourdomain.com">
+        <details>
+          <summary>Relay server (TURN) — only if some friends can't connect</summary>
+          <p class="hint">Most calls connect directly. On strict networks (some mobile carriers, offices) a TURN relay is needed — e.g. Cloudflare Realtime TURN.</p>
+          <label for="turnUrls">TURN URLs (comma-separated)</label><input id="turnUrls" placeholder="turn:turn.cloudflare.com:3478?transport=udp">
+          <div class="row">
+            <div><label for="turnUser">Username</label><input id="turnUser"></div>
+            <div><label for="turnCred">Credential</label><input id="turnCred" type="password"></div>
+          </div>
+        </details>
+        <div class="actions"><button class="btn ghost" id="saveTunnel">Save</button></div>
+        <div class="msg" id="tunnelMsg"></div>
+      </div>
+      <div class="card">
+        <h2>Plugin connection</h2>
+        <p class="sub">Must match <code>PhoneLink.ini</code> in the game folder.</p>
+        <div class="row">
+          <div><label for="stHost">Host</label><input id="stHost"></div>
+          <div><label for="stToken">Token</label><input id="stToken" placeholder="(none)"></div>
+        </div>
+        <div class="row">
+          <div><label for="stHttp">HTTP port</label><input id="stHttp" type="number"></div>
+          <div><label for="stWs">WebSocket port</label><input id="stWs" type="number"></div>
+        </div>
+        <div class="actions"><button class="btn ghost" id="stSave">Save</button></div>
+        <div class="msg" id="stMsg"></div>
+      </div>
+      <div class="card">
+        <h2>Tips</h2>
+        <ul class="steps">
+          <li>Use <b>headphones</b> — otherwise your mic picks up the game and your friend's voice (echo).</li>
+          <li>Answer with <b>Y</b>, decline or hang up with <b>N</b> (changeable in <code>PhoneLink.ini</code>).</li>
+          <li>While you're on a call, other friends see <b>Busy</b>; when the game is closed they see <b>Not in game</b>.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- LOG -->
+    <section class="tab" id="tab-log">
+      <div class="card">
+        <h2>Studio log</h2>
+        <p class="sub">For game-side problems also check <code>PhoneLink.log</code> in the game folder.</p>
+        <div class="actions" style="margin-top:0"><button class="btn ghost" id="logRefresh">Refresh</button></div>
+        <pre class="log" id="logBox"></pre>
+      </div>
+    </section>
+  </div>
+
+  <aside>
+    <div class="card">
+      <h2>Activity</h2>
+      <ul class="feed" id="feed"><li class="hint">Nothing yet.</li></ul>
+    </div>
+  </aside>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let settingsLoaded = false;
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, opts);
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    let d = body.detail;
+    if (Array.isArray(d)) d = d.map((x) => `${(x.loc || []).slice(1).join(".")}: ${x.msg}`).join("; ");
+    throw new Error(d || res.statusText);
+  }
+  return body;
+}
+const post = (path, data) => api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+function flash(id, text, ok = true) {
+  const el = $(id);
+  el.textContent = text;
+  el.className = "msg show " + (ok ? "ok" : "bad");
+  clearTimeout(el._t);
+  if (ok) el._t = setTimeout(() => (el.className = "msg"), 6000);
+}
+const iconLabel = (c) => c.replace("CHAR_", "").toLowerCase().replace(/^\w/, (m) => m.toUpperCase());
+function fillIcons(sel, icons, value) {
+  sel.innerHTML = icons.map((c) => `<option value="${c}">${iconLabel(c)}</option>`).join("");
+  sel.value = value;
+}
+
+document.querySelectorAll("#tabs button").forEach((b) => b.onclick = () => {
+  document.querySelectorAll("#tabs button").forEach((x) => x.classList.toggle("active", x === b));
+  document.querySelectorAll("section.tab").forEach((s) => s.classList.toggle("active", s.id === "tab-" + b.dataset.tab));
+  if (b.dataset.tab === "setup") loadGta();
+  if (b.dataset.tab === "log") loadLog();
+});
+
+const RESULTS = { hung_up: "Ended by friend", host_hung_up: "You hung up", declined: "Declined", no_answer: "Missed",
+  busy: "Busy", offline: "You were offline", caller_left: "Caller left", cancelled: "You cancelled", connection_failed: "Connection failed",
+  host_unavailable: "You became unavailable", failed: "Failed", ended: "Ended" };
+
+async function refresh() {
+  let s;
+  try { s = await api("/api/status"); } catch { $("gameText").textContent = "Studio offline"; $("gameDot").className = "dot bad"; return; }
+  const g = s.game;
+  $("gameDot").className = "dot " + (g.connected ? (g.in_game ? "ok" : "warn") : "bad");
+  $("gameText").textContent = g.connected ? (g.in_game ? "Game: in game" : "Game: loading…") : "Game: not running";
+  const av = { available: ["ok", "Available"], busy: ["warn", "Busy"], offline: ["bad", "Not in game"] }[s.availability];
+  $("availDot").className = "dot " + av[0];
+  $("availText").textContent = "Friends see: " + av[1];
+  $("bigDot").className = "dot " + av[0];
+  if (s.active_call) {
+    $("bigText").textContent = s.active_call.connected ? `On a call with ${s.active_call.from}` : `${s.active_call.from} is calling…`;
+    $("bigSub").textContent = s.active_call.connected ? "Press N in game or Hang up here to end it." : "Press Y in game to answer, N to decline.";
+  } else {
+    $("bigText").textContent = { available: "Ready for calls", busy: "Busy", offline: "Not in game" }[s.availability];
+    $("bigSub").textContent = s.availability === "offline" ? "Start GTA V story mode — friends can call once you're in game." : "Friends with your link can call you now.";
+  }
+  $("activeActions").hidden = !s.active_call;
+  $("inviteLink").value = s.calls.invite_link;
+  $("linkHint").hidden = !!s.calls.public_url;
+  if (!settingsLoaded) {
+    settingsLoaded = true;
+    $("displayName").value = s.calls.display_name;
+    fillIcons($("callerIcon"), s.icons, s.calls.caller_icon);
+    fillIcons($("smsIcon"), s.icons, "CHAR_LESTER");
+    $("publicUrl").value = s.calls.public_url;
+    $("turnUrls").value = s.calls.turn_urls; $("turnUser").value = s.calls.turn_username; $("turnCred").value = s.calls.turn_credential;
+    $("stHost").value = s.plugin.host; $("stHttp").value = s.plugin.http_port; $("stWs").value = s.plugin.ws_port; $("stToken").value = s.plugin.token;
+  }
+  $("friendsList").innerHTML = "";
+  for (const f of s.friends) {
+    const li = document.createElement("li");
+    li.innerHTML = '<span class="dot ok"></span><span></span>';
+    li.lastChild.textContent = f.name;
+    $("friendsList").appendChild(li);
+  }
+  if (!s.friends.length) $("friendsList").innerHTML = '<li class="hint">Nobody has your call page open right now.</li>';
+  $("historyEmpty").hidden = s.history.length > 0;
+  $("historyBody").innerHTML = "";
+  for (const h of s.history) {
+    const tr = document.createElement("tr");
+    for (const v of [h.time, h.direction === "out" ? "↗ out" : "↙ in", h.from, RESULTS[h.result] || h.result, h.duration ? `${Math.floor(h.duration / 60)}:${String(h.duration % 60).padStart(2, "0")}` : "—"]) {
+      const td = document.createElement("td"); td.textContent = v; tr.appendChild(td);
+    }
+    $("historyBody").appendChild(tr);
+  }
+}
+
+const EVENT_TEXT = {
+  game_connected: () => "Connected to the game",
+  game_disconnected: () => "Game disconnected",
+  friend_calling: (e) => `${e.from} is calling`,
+  calling_friend: (e) => `You're calling ${e.to}`,
+  friend_sms: (e) => `Text from ${e.from}: ${e.text}`,
+  friend_call_ended: (e) => `Call with ${e.from}: ${(RESULTS[e.result] || e.result).toLowerCase()}`,
+  sms_shown: (e) => `Text from ${e.from} shown`,
+  call_answered: () => "You answered",
+  call_declined: () => "You declined",
+  call_missed: () => "Missed call",
+};
+function onEvent(e) {
+  const fmt = EVENT_TEXT[e.event];
+  if (!fmt) return;
+  const feed = $("feed");
+  if (feed.querySelector(".hint")) feed.innerHTML = "";
+  const li = document.createElement("li");
+  li.innerHTML = "<time></time><span></span>";
+  li.querySelector("time").textContent = e.time || "";
+  li.querySelector("span").textContent = fmt(e);
+  feed.prepend(li);
+  refresh();
+}
+function connectEvents() {
+  const es = new EventSource("/api/events");
+  es.onmessage = (m) => onEvent(JSON.parse(m.data));
+  es.onerror = () => { es.close(); setTimeout(connectEvents, 3000); };
+}
+
+async function saveCalls(regenerate = false) {
+  return post("/api/settings/calls", {
+    display_name: $("displayName").value, public_url: $("publicUrl").value, caller_icon: $("callerIcon").value,
+    turn_urls: $("turnUrls").value, turn_username: $("turnUser").value, turn_credential: $("turnCred").value,
+    regenerate_code: regenerate,
+  });
+}
+$("saveCalls").onclick = async () => { try { await saveCalls(); await refresh(); flash("callsMsg", "Saved."); } catch (e) { flash("callsMsg", e.message, false); } };
+$("regenBtn").onclick = async () => {
+  if (!confirm("Create a new invite code? Links you've already shared will stop working.")) return;
+  try { await saveCalls(true); await refresh(); flash("callsMsg", "New invite link created."); } catch (e) { flash("callsMsg", e.message, false); }
+};
+$("saveTunnel").onclick = async () => {
+  const url = $("publicUrl").value.trim();
+  if (url && !/^https:\/\//.test(url)) return flash("tunnelMsg", "The address should start with https:// (browsers need HTTPS for the microphone).", false);
+  try { await saveCalls(); await refresh(); flash("tunnelMsg", "Saved. Your invite link is on the Calls tab."); } catch (e) { flash("tunnelMsg", e.message, false); }
+};
+$("copyBtn").onclick = async () => {
+  try { await navigator.clipboard.writeText($("inviteLink").value); flash("callsMsg", "Link copied."); }
+  catch { $("inviteLink").select(); document.execCommand("copy"); flash("callsMsg", "Link copied."); }
+};
+$("hangupBtn").onclick = async () => { try { await post("/api/hangup", {}); } catch (e) { flash("callsMsg", e.message, false); } };
+$("testBtn").onclick = async () => {
+  try { await post("/api/test-call", {}); flash("testMsg", "Ringing — press Y in game to answer."); } catch (e) { flash("testMsg", e.message, false); }
+};
+$("smsBtn").onclick = async () => {
+  if (!$("smsText").value.trim()) return flash("smsMsg", "Write a message first.", false);
+  try { await post("/api/sms", { sender: $("smsSender").value || "Unknown", text: $("smsText").value, icon: $("smsIcon").value }); flash("smsMsg", "Sent."); }
+  catch (e) { flash("smsMsg", e.message, false); }
+};
+
+function check(ok, text, warn) { return `<li><span class="dot ${ok ? "ok" : warn ? "warn" : "bad"}"></span>${text}</li>`; }
+function showGta(d, running) {
+  const c = $("gtaChecks");
+  if (!d) { c.innerHTML = check(false, "Enter your GTA V folder and press Check"); return; }
+  c.innerHTML = [
+    check(d.valid, d.valid ? "GTA V found" : "GTA5.exe not found here"),
+    check(d.scripthookv, "Script Hook V " + (d.scripthookv ? "installed" : "missing")),
+    check(d.asi_loader, "ASI loader (dinput8.dll) " + (d.asi_loader ? "installed" : "missing")),
+    check(d.plugin_up_to_date, d.plugin_installed ? (d.plugin_up_to_date ? "PhoneLink installed and up to date" : "PhoneLink installed — update available") : "PhoneLink not installed", d.plugin_installed),
+    running ? check(false, "GTA V is running — close it before installing", true) : "",
+  ].join("");
+}
+async function loadGta() {
+  const r = await api("/api/gta");
+  $("gtaDirs").innerHTML = r.dirs.map((d) => `<option value="${d.path}">`).join("");
+  if (!$("gtaDir").value) $("gtaDir").value = r.selected;
+  showGta(r.dirs.find((d) => d.path.toLowerCase() === $("gtaDir").value.toLowerCase()), r.game_running);
+}
+$("gtaCheck").onclick = async () => {
+  const r = await api("/api/gta");
+  showGta(r.dirs.find((x) => x.path.toLowerCase() === $("gtaDir").value.toLowerCase()) || { valid: false }, r.game_running);
+};
+$("gtaInstall").onclick = async () => {
+  try { showGta(await post("/api/gta/install", { path: $("gtaDir").value }), false); flash("gtaMsg", "Installed. Start GTA V story mode."); }
+  catch (e) { flash("gtaMsg", e.message, false); }
+};
+$("stSave").onclick = async () => {
+  try { await post("/api/settings/plugin", { host: $("stHost").value, http_port: +$("stHttp").value, ws_port: +$("stWs").value, token: $("stToken").value }); flash("stMsg", "Saved."); }
+  catch (e) { flash("stMsg", e.message, false); }
+};
+async function loadLog() {
+  const r = await api("/api/log");
+  $("logBox").textContent = r.lines.join("\n") || "(empty)";
+  $("logBox").scrollTop = $("logBox").scrollHeight;
+}
+$("logRefresh").onclick = loadLog;
+
+refresh();
+setInterval(refresh, 4000);
+connectEvents();
+</script>
+</body>
+</html>

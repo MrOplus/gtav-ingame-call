@@ -1,0 +1,5 @@
+aiortc==1.15.0
+fastapi==0.142.2
+uvicorn==0.54.0
+websockets==17.1
+numpy==2.4.6

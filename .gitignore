@@ -1,0 +1,17 @@
+# build output
+build/
+build-dbg/
+out/
+.vs/
+CMakeUserPresets.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# runtime files (local settings contain your invite code)
+studio/settings.json
+*.log
+mic.wav
+dist/

@@ -1,0 +1,29 @@
+; Import definitions for ScriptHookV.dll (from `dumpbin /exports ScriptHookV.dll`).
+; The build generates ScriptHookV.lib from this file (see CMakeLists.txt):
+;   lib /def:ScriptHookV.def /machine:x64 /out:ScriptHookV.lib
+LIBRARY ScriptHookV.dll
+EXPORTS
+    ?createTexture@@YAHPEBD@Z
+    ?drawTexture@@YAXHHHHMMMMMMMMMMMM@Z
+    ?getGameVersion@@YA?AW4eGameVersion@@XZ
+    ?getGameVersionInfo@@YA?AUGameVersionInfo@@XZ
+    ?getGlobalPtr@@YAPEA_KH@Z
+    ?getScriptHandleBaseAddress@@YAPEAEH@Z
+    ?keyboardHandlerRegister@@YAXP6AXKGEHHHH@Z@Z
+    ?keyboardHandlerUnregister@@YAXP6AXKGEHHHH@Z@Z
+    ?nativeCall@@YAPEA_KXZ
+    ?nativeCanExecuteInThisContext@@YA_NXZ
+    ?nativeInit@@YAX_K@Z
+    ?nativePush64@@YAX_K@Z
+    ?presentCallbackRegister@@YAXP6AXPEAX@Z@Z
+    ?presentCallbackUnregister@@YAXP6AXPEAX@Z@Z
+    ?scriptRegister@@YAXPEAUHINSTANCE__@@P6AXXZ@Z
+    ?scriptRegisterAdditionalThread@@YAXPEAUHINSTANCE__@@P6AXXZ@Z
+    ?scriptUnregister@@YAXP6AXXZ@Z
+    ?scriptUnregister@@YAXPEAUHINSTANCE__@@@Z
+    ?scriptWait@@YAXK@Z
+    ?scriptsAreLaunchedUsingReloading@@YA_NXZ
+    ?worldGetAllObjects@@YAHPEAHH@Z
+    ?worldGetAllPeds@@YAHPEAHH@Z
+    ?worldGetAllPickups@@YAHPEAHH@Z
+    ?worldGetAllVehicles@@YAHPEAHH@Z
